@@ -7,7 +7,6 @@ import (
 	rc4P "crypto/rc4"
 	"encoding/binary"
 	"errors"
-	"log"
 	"strings"
 	"time"
 )
@@ -204,7 +203,6 @@ func (n *V2ServerSession) ProcessAuthenticateMessage(am *AuthenticateMessage) (e
 	// They should always be correct (I hope)
 	n.user = am.UserName.String()
 	n.userDomain = am.DomainName.String()
-	log.Printf("(ProcessAuthenticateMessage)NTLM v2 User %s Domain %s", n.user, n.userDomain)
 
 	err = n.fetchResponseKeys()
 	if err != nil {
@@ -243,7 +241,6 @@ func (n *V2ServerSession) ProcessAuthenticateMessage(am *AuthenticateMessage) (e
 		//TODO investigate if this ever is really happening
 		am.Version = &VersionStruct{ProductMajorVersion: uint8(5), ProductMinorVersion: uint8(1), ProductBuild: uint16(2600), NTLMRevisionCurrent: uint8(15)}
 
-		log.Printf("Nil version in ntlmv2")
 	}
 
 	err = n.calculateKeys(am.Version.NTLMRevisionCurrent)
@@ -335,6 +332,16 @@ func (n *V2ClientSession) ProcessChallengeMessage(cm *ChallengeMessage) (err err
 		return err
 	}
 
+	// [Psiphon]
+	// Copied almost verbatim from ProcessAuthenticateMessage. We received a
+	// panic report due to a nil cm.Version.
+	if cm.Version == nil {
+		//UGH not entirely sure how this could possibly happen, going to put this in for now
+		//TODO investigate if this ever is really happening
+		cm.Version = &VersionStruct{ProductMajorVersion: uint8(5), ProductMinorVersion: uint8(1), ProductBuild: uint16(2600), NTLMRevisionCurrent: uint8(15)}
+
+	}
+
 	err = n.calculateKeys(cm.Version.NTLMRevisionCurrent)
 	if err != nil {
 		return err
@@ -364,6 +371,8 @@ func (n *V2ClientSession) GenerateAuthenticateMessage() (am *AuthenticateMessage
 	am.NegotiateFlags = n.NegotiateFlags
 	am.Mic = make([]byte, 16)
 	am.Version = &VersionStruct{ProductMajorVersion: uint8(5), ProductMinorVersion: uint8(1), ProductBuild: uint16(2600), NTLMRevisionCurrent: 0x0F}
+
+	n.authenticateMessage = am
 	return am, nil
 }
 

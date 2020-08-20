@@ -6,7 +6,6 @@ import (
 	"bytes"
 	rc4P "crypto/rc4"
 	"errors"
-	"log"
 	"strings"
 )
 
@@ -181,7 +180,6 @@ func (n *V1ServerSession) ProcessAuthenticateMessage(am *AuthenticateMessage) (e
 	// They should always be correct (I hope)
 	n.user = am.UserName.String()
 	n.userDomain = am.DomainName.String()
-	log.Printf("(ProcessAuthenticateMessage)NTLM v1 User %s Domain %s", n.user, n.userDomain)
 
 	err = n.fetchResponseKeys()
 	if err != nil {
@@ -225,7 +223,6 @@ func (n *V1ServerSession) ProcessAuthenticateMessage(am *AuthenticateMessage) (e
 		//UGH not entirely sure how this could possibly happen, going to put this in for now
 		//TODO investigate if this ever is really happening
 		am.Version = &VersionStruct{ProductMajorVersion: uint8(5), ProductMinorVersion: uint8(1), ProductBuild: uint16(2600), NTLMRevisionCurrent: uint8(15)}
-		log.Printf("Nil version in ntlmv1")
 	}
 
 	err = n.calculateKeys(am.Version.NTLMRevisionCurrent)

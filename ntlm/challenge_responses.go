@@ -21,6 +21,10 @@ func (n *NtlmV1Response) String() string {
 }
 
 func ReadNtlmV1Response(bytes []byte) (*NtlmV1Response, error) {
+	if bytes == nil || len(bytes) < 24 {
+		return nil, errors.New("Does not contain a valid NTLM v1 client challenge")
+	}
+
 	r := new(NtlmV1Response)
 	r.Response = bytes[0:24]
 	return r, nil
@@ -84,6 +88,10 @@ func (n *NtlmV2Response) String() string {
 }
 
 func ReadNtlmV2Response(bytes []byte) (*NtlmV2Response, error) {
+	if bytes == nil || len(bytes) < 44 {
+		return nil, errors.New("Does not contain a valid NTLM v2 client challenge - could be NTLMv1.")
+	}
+
 	r := new(NtlmV2Response)
 	r.Response = bytes[0:16]
 	r.NtlmV2ClientChallenge = new(NtlmV2ClientChallenge)
@@ -115,6 +123,10 @@ type LmV1Response struct {
 }
 
 func ReadLmV1Response(bytes []byte) *LmV1Response {
+	if bytes == nil || len(bytes) < 24 {
+		return nil
+	}
+
 	r := new(LmV1Response)
 	r.Response = bytes[0:24]
 	return r
@@ -137,6 +149,10 @@ type LmV2Response struct {
 }
 
 func ReadLmV2Response(bytes []byte) *LmV2Response {
+	if bytes == nil || len(bytes) < 24 {
+		return nil
+	}
+
 	r := new(LmV2Response)
 	r.Response = bytes[0:16]
 	r.ChallengeFromClient = bytes[16:24]
