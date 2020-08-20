@@ -282,6 +282,7 @@ func (n *V2ServerSession) computeExportedSessionKey() (err error) {
 
 type V2ClientSession struct {
 	V2Session
+	GenerateMIC bool
 }
 
 func (n *V2ClientSession) GenerateNegotiateMessage() (nm *NegotiateMessage, err error) {
@@ -390,6 +391,12 @@ func (n *V2ClientSession) GenerateAuthenticateMessage() (am *AuthenticateMessage
 	am.Version = &VersionStruct{ProductMajorVersion: uint8(5), ProductMinorVersion: uint8(1), ProductBuild: uint16(2600), NTLMRevisionCurrent: 0x0F}
 
 	n.authenticateMessage = am
+
+	if n.GenerateMIC {
+		am.NegotiateFlags = NTLMSSP_NEGOTIATE_SIGN.Set(am.NegotiateFlags)
+		n.createMic()
+	}
+
 	return am, nil
 }
 
@@ -404,6 +411,15 @@ func (n *V2ClientSession) computeEncryptedSessionKey() (err error) {
 		n.encryptedRandomSessionKey = n.keyExchangeKey
 	}
 	return nil
+}
+
+func (n *V2ClientSession) createMic() {
+	var buff = bytes.NewBuffer(make([]byte, 0))
+	buff.Write(n.negotiateMessage.Bytes())
+	buff.Write(n.challengeMessage.Bytes())
+	buff.Write(n.authenticateMessage.Bytes())
+
+	n.authenticateMessage.Mic = hmacMd5(n.exportedSessionKey, buff.Bytes())
 }
 
 /********************************
